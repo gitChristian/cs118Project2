@@ -1,0 +1,5 @@
+#no object files
+*.o
+
+#not the executable
+webserver

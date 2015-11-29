@@ -1,9 +1,9 @@
 CC=g++
 CFLAGS=-I.
 DEPS = # header file 
-OBJ = webserver.o
+OBJ = server.o
 
-webserver: $(OBJ)
+server: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 %.o: %.cpp $(DEPS)
