@@ -14,11 +14,12 @@ seq_num = sequence number
 #define MAX_SEGMENT_SIZE 1000
 
 enum mode{ACK, REQ, DATA};
+const int SEG_DATA_SIZE = MAX_SEGMENT_SIZE - sizeof(int)*2 - sizeof(mode);
 
 struct segment
 {
 	int seq_num;
 	int length;
 	mode type;
-	char data[MAX_SEGMENT_SIZE - sizeof(int)*2 - sizeof(mode)];
+	char data[SEG_DATA_SIZE];
 };

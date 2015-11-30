@@ -9,12 +9,14 @@
 #include <signal.h> /* signal name macros, and the kill() prototype */
 #include <unistd.h>
 #include <sys/stat.h>
+#include <list>
 #include "segment.cpp"
 
 using namespace std;
 
-/*various global variables */
+#define WINDOW_SIZE 10
 
+list<struct segment> window_list;
 // used to store client address info
 struct sockaddr_in cli_addr;
 socklen_t cli_addr_length;
@@ -25,7 +27,7 @@ int file_size;
 struct segment rspd_seg, req_seg;
 int sockfd;
 
-
+/*initializes file and file_size */
 void processRequest(){
   while(1){
     if(recvfrom(sockfd, &req_seg, sizeof(req_seg), 0, (struct sockaddr*) &cli_addr, &cli_addr_length) > 0){
@@ -46,6 +48,27 @@ void processRequest(){
       return;
     }
   }  
+}
+
+
+void makeSegment(int next_seq_num){
+  rspd_seg.type = DATA;
+  rspd_seg.seq_num = next_seq_num;
+  rspd_seg.length = fread(rspd_seg.data, 1, SEG_DATA_SIZE, file);
+}
+
+//send data using GBN
+void sendData(){
+  int base = 1, next_seq_num = 1;
+
+  if(next_seq_num < base + WINDOW_SIZE){
+    makeSegment(next_seq_num);
+
+    sendto(sockfd, &rspd_seg, rspd_seg.length + sizeof(int) *2 + sizeof(mode), 0,
+      (struct sockaddr*)&cli_addr, cli_addr_length );
+
+
+  }
 }
 
 
@@ -75,11 +98,7 @@ int main(int argc, char *argv[])
               }
 
     processRequest();
-
-    //loop until file transmission is complete
-    while(1){
-       // recvfrom(sockfd, hello, 10, 0,(struct sockaddr*)&cli_addr, &cli_addr_length );
-	    
-    }
+    sendData();  
+    
     close(sockfd);
 }
