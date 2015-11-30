@@ -5,72 +5,12 @@
 #include <netinet/in.h>  // constants and structures needed for internet domain addresses, e.g. sockaddr_in
 #include <cstdlib>
 #include <cstring>
-#include <sys/wait.h> /* for the waitpid() system call */
-#include <signal.h> /* signal name macros, and the kill() prototype */
 #include <unistd.h>
 #include <sys/stat.h>
-#include <list>
-#include "segment.cpp"
+#include <time.h>
+#include "server.h"
 
 using namespace std;
-
-#define WINDOW_SIZE 10
-
-list<struct segment> window_list;
-// used to store client address info
-struct sockaddr_in cli_addr;
-socklen_t cli_addr_length;
-//client's requested file
-FILE* file;
-//number of segments the file needs
-int file_size;
-struct segment rspd_seg, req_seg;
-int sockfd;
-
-/*initializes file and file_size */
-void processRequest(){
-  while(1){
-    if(recvfrom(sockfd, &req_seg, sizeof(req_seg), 0, (struct sockaddr*) &cli_addr, &cli_addr_length) > 0){
-      if(req_seg.type == REQ){
-        puts("Got a request for a file.");
-        file = fopen(req_seg.data, "r");
-        if(file == NULL){
-          fprintf(stderr,"ERROR, couldn't find file.\n");
-          exit(1);
-        }
-
-        struct stat s;
-        stat(req_seg.data, &s);
-        file_size = s.st_size/MAX_SEGMENT_SIZE;
-        if(s.st_size % MAX_SEGMENT_SIZE != 0)
-          file_size++;
-      }
-      return;
-    }
-  }  
-}
-
-
-void makeSegment(int next_seq_num){
-  rspd_seg.type = DATA;
-  rspd_seg.seq_num = next_seq_num;
-  rspd_seg.length = fread(rspd_seg.data, 1, SEG_DATA_SIZE, file);
-}
-
-//send data using GBN
-void sendData(){
-  int base = 1, next_seq_num = 1;
-
-  if(next_seq_num < base + WINDOW_SIZE){
-    makeSegment(next_seq_num);
-
-    sendto(sockfd, &rspd_seg, rspd_seg.length + sizeof(int) *2 + sizeof(mode), 0,
-      (struct sockaddr*)&cli_addr, cli_addr_length );
-
-
-  }
-}
-
 
 int main(int argc, char *argv[])
 {
@@ -101,4 +41,62 @@ int main(int argc, char *argv[])
     sendData();  
     
     close(sockfd);
+}
+
+/*initializes file and total_segments */
+void processRequest(){
+  while(1){
+    if(recvfrom(sockfd, &req_seg, sizeof(req_seg), 0, (struct sockaddr*) &cli_addr, &cli_addr_length) > 0){
+      if(req_seg.type == REQ){
+        puts("Got a request for a file.");
+        file = fopen(req_seg.data, "rb");
+        if(file == NULL){
+          fprintf(stderr,"ERROR, couldn't find file.\n");
+          exit(1);
+        }
+
+        struct stat s;
+        stat(req_seg.data, &s);
+        total_segments = s.st_size/MAX_SEGMENT_SIZE;
+        if(s.st_size % MAX_SEGMENT_SIZE != 0)
+          total_segments++;
+      }
+      return;
+    }
+  }  
+}
+
+//send data using GBN
+void sendData(){
+  sendFirstWindow();
+  while(base <= total_segments){
+    if(timer + TIMEOUT < time(NULL)){
+      printf("Timeout from packet number%d\n", base);
+
+
+      //.....
+    }
+  }
+
+}
+
+void sendFirstWindow(){
+  while(next_seq_num < base + WINDOW_SIZE ){
+    makeSegment(next_seq_num);
+    window_list.push_back(rspd_seg);
+    if(sendto(sockfd, &rspd_seg, rspd_seg.length + sizeof(int) *2 + sizeof(mode), 0,
+      (struct sockaddr*)&cli_addr, cli_addr_length ) < 0 ){
+          fprintf(stderr,"ERROR, couldn't send data.\n");
+          exit(1);}
+    printf("Sending packet number %d\n", rspd_seg.seq_num );
+    if(base == next_seq_num)
+      time(&timer);
+    next_seq_num++;
+  }
+}
+
+void makeSegment(int next_seq_num){
+  rspd_seg.type = DATA;
+  rspd_seg.seq_num = next_seq_num;
+  rspd_seg.length = fread(rspd_seg.data, 1, SEG_DATA_SIZE, file);
 }
