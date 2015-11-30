@@ -20,5 +20,5 @@ struct segment
 	int seq_num;
 	int length;
 	mode type;
-	int data[MAX_SEGMENT_SIZE - sizeof(int)*2 - sizeof(mode)];
+	char data[MAX_SEGMENT_SIZE - sizeof(int)*2 - sizeof(mode)];
 };
