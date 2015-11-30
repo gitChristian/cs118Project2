@@ -8,6 +8,7 @@
 #include <sys/wait.h> /* for the waitpid() system call */
 #include <signal.h> /* signal name macros, and the kill() prototype */
 #include <unistd.h>
+#include "segment.cpp"
 
 using namespace std;
 
@@ -37,15 +38,13 @@ int main(int argc, char *argv[])
          		exit(1);
               }
 
-    
-
     // used to store client address info
     struct sockaddr_in cli_addr;
     socklen_t cli_addr_length;
 
-    //infinite loop accepting packets
+    //loop until file transmission is complete
     while(1){
-        
+       // recvfrom(sockfd, hello, 10, 0,(struct sockaddr*)&cli_addr, &cli_addr_length );
 	    
     }
     close(sockfd);

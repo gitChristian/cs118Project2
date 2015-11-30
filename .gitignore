@@ -1,5 +1,6 @@
 #no object files
 *.o
 
-#not the executable
-webserver
+#not the executables
+server
+client
