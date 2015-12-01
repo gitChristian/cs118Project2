@@ -41,61 +41,92 @@ int main(int argc, char *argv[])
     sendData();  
     
     close(sockfd);
+    fclose(file);
 }
 
 /*initializes file and total_segments */
 void processRequest(){
-  while(1){
-    if(recvfrom(sockfd, &req_seg, sizeof(req_seg), 0, (struct sockaddr*) &cli_addr, &cli_addr_length) > 0){
-      if(req_seg.type == REQ){
-        puts("Got a request for a file.");
-        file = fopen(req_seg.data, "rb");
-        if(file == NULL){
-          fprintf(stderr,"ERROR, couldn't find file.\n");
-          exit(1);
-        }
-
-        struct stat s;
-        stat(req_seg.data, &s);
-        total_segments = s.st_size/MAX_SEGMENT_SIZE;
-        if(s.st_size % MAX_SEGMENT_SIZE != 0)
-          total_segments++;
+  if(recvfrom(sockfd, &req_seg, sizeof(req_seg), 0, 
+  (struct sockaddr*) &cli_addr, &cli_addr_length) > 0){
+    if(req_seg.type == REQ){
+      puts("Got a request for a file.");
+      file = fopen(req_seg.data, "rb");
+      if(file == NULL){
+        fprintf(stderr,"ERROR, couldn't find file.\n");
+        exit(1);
       }
-      return;
+
+      struct stat s;
+      stat(req_seg.data, &s);
+      total_segments = s.st_size/MAX_SEGMENT_SIZE;
+      if(s.st_size % MAX_SEGMENT_SIZE != 0)
+        total_segments++;
+      printf("Total segments to be sent: %d\n", total_segments);
     }
-  }  
+    else
+      fprintf(stderr,"ERROR, recieved wrong segment format.\n");
+  }
+  else
+    fprintf(stderr,"ERROR, could not recieve.\n");
 }
 
 //send data using GBN
 void sendData(){
   sendFirstWindow();
   while(base <= total_segments){
+    
+    //timeout
     if(timer + TIMEOUT < time(NULL)){
-      printf("Timeout from packet number%d\n", base);
-
-
-      //.....
+      printf("Timeout from segment number%d\n", base);
+      //resend window
+      for (list<struct segment>::iterator it=window_list.begin(); it != window_list.end(); it++){
+        if(sendto(sockfd, &(*it), it->length + sizeof(int) *2 + sizeof(mode), 0,
+        (struct sockaddr*)&cli_addr, cli_addr_length ) < 0 ){
+          fprintf(stderr,"ERROR, couldn't send data.\n");
+          exit(1);}
+        printf("Resending packet number %d\n", it->seq_num );
+      }
+      time(&timer);
     }
-  }
 
+    //recieved expected ACK number
+    if(recvfrom(sockfd, &req_seg, sizeof(req_seg), MSG_DONTWAIT, 
+    (struct sockaddr*) &cli_addr, &cli_addr_length) > 0){
+      if(req_seg.type == ACK && req_seg.seq_num == base){
+        printf("Recieved ACK for segment: %d\n", req_seg.seq_num);
+        if(++base > total_segments)
+          return;
+        window_list.pop_front();
+        if(next_seq_num <= total_segments){
+          sendNextSegment();
+          time(&timer);
+        }
+      }
+    }
+
+  }
 }
 
 void sendFirstWindow(){
-  while(next_seq_num < base + WINDOW_SIZE ){
-    makeSegment(next_seq_num);
-    window_list.push_back(rspd_seg);
-    if(sendto(sockfd, &rspd_seg, rspd_seg.length + sizeof(int) *2 + sizeof(mode), 0,
-      (struct sockaddr*)&cli_addr, cli_addr_length ) < 0 ){
-          fprintf(stderr,"ERROR, couldn't send data.\n");
-          exit(1);}
-    printf("Sending packet number %d\n", rspd_seg.seq_num );
-    if(base == next_seq_num)
-      time(&timer);
-    next_seq_num++;
-  }
+  while(next_seq_num < base + WINDOW_SIZE )
+    sendNextSegment();
 }
 
-void makeSegment(int next_seq_num){
+void sendNextSegment(){
+  makeNextSegment();
+  window_list.push_back(rspd_seg);
+  if(sendto(sockfd, &rspd_seg, rspd_seg.length + sizeof(int) *2 + sizeof(mode), 0,
+  (struct sockaddr*)&cli_addr, cli_addr_length ) < 0 ){
+    fprintf(stderr,"ERROR, couldn't send data.\n");
+    exit(1);}
+  printf("Sending packet number %d\n", rspd_seg.seq_num );
+  if(base == next_seq_num)
+    time(&timer);
+  if(next_seq_num <= total_segments)
+    next_seq_num++;
+}
+
+void makeNextSegment(){
   rspd_seg.type = DATA;
   rspd_seg.seq_num = next_seq_num;
   rspd_seg.length = fread(rspd_seg.data, 1, SEG_DATA_SIZE, file);

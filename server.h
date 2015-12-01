@@ -18,6 +18,7 @@ int base = 1, next_seq_num = 1;
 time_t timer;
 
 void processRequest();
-void makeSegment(int next_seq_num);
+void makeNextSegment();
 void sendFirstWindow();
 void sendData();
+void sendNextSegment();
