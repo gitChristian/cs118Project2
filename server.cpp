@@ -7,6 +7,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <time.h>
 #include "server.h"
 
@@ -117,7 +118,9 @@ void sendNextSegment(){
   window_list.push_back(rspd_seg);
   if(sendto(sockfd, &rspd_seg, rspd_seg.length + sizeof(int) *2 + sizeof(mode), 0,
   (struct sockaddr*)&cli_addr, cli_addr_length ) < 0 ){
-    fprintf(stderr,"ERROR, couldn't send data.\n");
+    fprintf(stderr,"ERROR, couldn't send data.\n%s \n", strerror(errno));
+    printf("%d\n", errno );
+
     exit(1);}
   printf("Sending packet number %d\n", rspd_seg.seq_num );
   if(base == next_seq_num)
@@ -130,4 +133,5 @@ void makeNextSegment(){
   rspd_seg.type = DATA;
   rspd_seg.seq_num = next_seq_num;
   rspd_seg.length = fread(rspd_seg.data, 1, SEG_DATA_SIZE, file);
+  printf("Making segment number %d\n", rspd_seg.seq_num );
 }

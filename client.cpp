@@ -15,18 +15,12 @@ double probability() {
     return (double) rand()/(double) RAND_MAX;
 }
 
-
-
 int main(int argc, char **argv) {
-
-char buf[BUF_SIZE];
-
+    char buf[BUF_SIZE];
 
     if (argc != 4) {
        fprintf(stderr,"Usage Error. \n");
-       exit(1);
-    }
-
+       exit(1);     }
 
     /* create the socket for client to use*/
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -42,7 +36,6 @@ char buf[BUF_SIZE];
         exit(1);
     }
 
-
     /* build the server's Internet address */
     bzero((char *) &serveraddr, sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
@@ -54,16 +47,16 @@ char buf[BUF_SIZE];
     bzero((char *) &req_seg, sizeof(req_seg));
     filename = argv[3];
     strcpy(req_seg.data, filename);
-    req_seg.length = sizeof(req_seg.type) * 3 + strlen(filename) + 1;
+    req_seg.length = strlen(filename);
+    req_seg.type = REQ;
 
     /* send request to the server */
     serverlen = sizeof(serveraddr);
-    n = sendto(sockfd, &req_seg, req_seg.length, 0, (struct sockaddr*) &serveraddr, serverlen);
-
+    n = sendto(sockfd, &req_seg, req_seg.length + sizeof(int) *2 + sizeof(mode), 
+        0, (struct sockaddr*) &serveraddr, serverlen);
     if (n < 0){
         fprintf(stderr,"Error in requested file. \n");
-        exit(1);    
-    }
+        exit(1);        }
 
     rspd_seg.length = SEG_DATA_SIZE;
     expected_seq_no = 1;
