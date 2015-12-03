@@ -21,9 +21,6 @@
 #include "client.h"
 
 
-
-
-
 double probability() {
 
     return (double) rand()/(double) RAND_MAX;
@@ -152,89 +149,35 @@ char buf[BUF_SIZE];
 
 
 
-
-
-
 void segmentControl(){
-
- if (recvfrom(sockfd, &rspd_seg, sizeof(rspd_seg), 0, (struct sockaddr*) &serveraddr, (socklen_t*) &serverlen) < 0 || probability() < LOSS_PROB) {
-
-            printf("segment lost!\n");
-
-        }
-
-else
-
-    segmentCorrupted();
-
-
-
+    if (recvfrom(sockfd, &rspd_seg, sizeof(rspd_seg), 0, (struct sockaddr*) &serveraddr, (socklen_t*) &serverlen)
+    < 0 || probability() < LOSS_PROB) {
+        printf("segment lost!\n");
+    }
+    else
+        segmentCorrupted();
 }
-
-
-
-
-
-
 
 void segmentCorrupted(){
-
-
-
-if (probability() < CORRUPT_PROB) {
-
-            printf("segment corrupted!\n");
-
-            if (sendto(sockfd, &req_seg, req_seg.length, 0, (struct sockaddr*) &serveraddr, serverlen) < 0){
-
-                        fprintf(stderr,"Error corrupted file. \n");
-
-                        exit(1);
-
-                                       }
-
+    if (probability() < CORRUPT_PROB) {
+        printf("segment corrupted!\n");
+        if (sendto(sockfd, &req_seg, req_seg.length, 0, (struct sockaddr*) &serveraddr, serverlen) < 0){
+            fprintf(stderr,"Error corrupted file. \n");
+            exit(1);
         }
-
-else
-
-    segmentConfirm();
-
-
-
+    }
+    else
+        segmentConfirm();
 }
 
-
-
-
-
 void segmentConfirm(){
-
-
-
-printf("Received segment number %d\n", rspd_seg.seq_num);
-
+    printf("Received segment number %d\n", rspd_seg.seq_num);
     fwrite(rspd_seg.data, 1, rspd_seg.length, file);
-
-            req_seg.seq_num = rspd_seg.seq_num;
-
-
-
-            if (sendto(sockfd, &req_seg, req_seg.length, 0, (struct sockaddr*) &serveraddr, serverlen) < 0){
-
-                        fprintf(stderr,"Error in Acking");
-
-                        exit(1);
-
-                    }
-
-
-
-            printf("ACK'd segment %d\n", req_seg.seq_num);
-
-            expected_seq_no++;
-
-
-
-
-
+    req_seg.seq_num = rspd_seg.seq_num;
+    if (sendto(sockfd, &req_seg, req_seg.length, 0, (struct sockaddr*) &serveraddr, serverlen) < 0){
+        fprintf(stderr,"Error in Acking");
+        exit(1);
+    }
+    printf("ACK'd segment %d\n", req_seg.seq_num);
+    expected_seq_no++;
 }
