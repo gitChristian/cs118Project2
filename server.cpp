@@ -93,6 +93,7 @@ void sendData(){
     //recieved expected ACK number
     if(recvfrom(sockfd, &req_seg, sizeof(req_seg), MSG_DONTWAIT, 
     (struct sockaddr*) &cli_addr, &cli_addr_length) > 0){
+     // printf("%d and type %d\n", req_seg.seq_num, req_seg.type );
       if(req_seg.type == ACK && req_seg.seq_num == base){
         printf("Recieved ACK for segment: %d\n", req_seg.seq_num);
         if(++base > total_segments)
@@ -109,7 +110,7 @@ void sendData(){
 }
 
 void sendFirstWindow(){
-  while(next_seq_num < base + WINDOW_SIZE )
+  while(next_seq_num < base + WINDOW_SIZE && next_seq_num <= total_segments)
     sendNextSegment();
 }
 
@@ -133,5 +134,4 @@ void makeNextSegment(){
   rspd_seg.type = DATA;
   rspd_seg.seq_num = next_seq_num;
   rspd_seg.length = fread(rspd_seg.data, 1, SEG_DATA_SIZE, file);
-  printf("Making segment number %d\n", rspd_seg.seq_num );
 }

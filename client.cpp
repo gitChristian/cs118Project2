@@ -12,7 +12,8 @@
 
 
 double probability() {
-    return (double) rand()/(double) RAND_MAX;
+    //return (double) rand()/(double) RAND_MAX;
+    return 1;
 }
 
 int main(int argc, char **argv) {
@@ -57,15 +58,13 @@ int main(int argc, char **argv) {
     if (n < 0){
         fprintf(stderr,"Error in requested file. \n");
         exit(1);        }
-
-    rspd_seg.length = SEG_DATA_SIZE;
-    expected_seq_no = 1;
     file = fopen(strcat(filename, "_copy"), "wb");
 
+    // build ACK segment
     bzero((char *) &req_seg, sizeof(req_seg));
-    req_seg.length = sizeof(int) * 3;
+    req_seg.length = 0;
     req_seg.type = ACK;
-    req_seg.seq_num = expected_seq_no - 1;
+    req_seg.seq_num = expected_seq_no;
 
     srand(time(NULL));
     while (1) {
@@ -77,8 +76,8 @@ int main(int argc, char **argv) {
 
 
 void segmentControl(){
-    if (recvfrom(sockfd, &rspd_seg, sizeof(rspd_seg), 0, (struct sockaddr*) &serveraddr, (socklen_t*) &serverlen)
-    < 0 || probability() < LOSS_PROB) {
+    if (recvfrom(sockfd, &rspd_seg, sizeof(rspd_seg), 0, (struct sockaddr*) &serveraddr, 
+        (socklen_t*) &serverlen) < 0 || probability() < LOSS_PROB) {
         printf("segment lost!\n");
     }
     else
