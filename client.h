@@ -2,7 +2,7 @@
 
 
 const int BUF_SIZE = 1024;
-double LOSS_PROB = 0.00;
+double LOSS_PROB = 0.2;
 double CORRUPT_PROB = 0.0;
 
 

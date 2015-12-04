@@ -1,6 +1,7 @@
 #include <list>
 #include "segment.cpp"
 
+//WINDOW_SIZE is number of segments (not bytes)
 #define WINDOW_SIZE 10
 #define TIMEOUT 2
 
