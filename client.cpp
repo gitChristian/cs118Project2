@@ -74,7 +74,6 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-
 void segmentControl(){
     if (recvfrom(sockfd, &rspd_seg, sizeof(rspd_seg), 0, (struct sockaddr*) &serveraddr, 
         (socklen_t*) &serverlen) < 0 || probability() < LOSS_PROB) {
@@ -98,6 +97,9 @@ void segmentCorrupted(){
 }
 
 void segmentConfirm(){
+    //server closed connection
+    if(rspd_seg.type == CLOSE)
+        exit(0);
     printf("Received segment number %d\n", rspd_seg.seq_num);
     fwrite(rspd_seg.data, 1, rspd_seg.length, file);
     req_seg.seq_num = rspd_seg.seq_num;

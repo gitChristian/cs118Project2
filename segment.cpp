@@ -7,13 +7,14 @@ int data
 
 type represents the type of packet
 data is empty if type = ACK
+CLOSE is used by server to close connection
 
 seq_num = sequence number
 */
 
 #define MAX_SEGMENT_SIZE 1000
 
-enum mode{ACK, REQ, DATA};
+enum mode{ACK, REQ, DATA, CLOSE};
 const int SEG_DATA_SIZE = MAX_SEGMENT_SIZE - sizeof(int)*2 - sizeof(mode);
 
 struct segment

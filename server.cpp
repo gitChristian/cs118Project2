@@ -40,6 +40,11 @@ int main(int argc, char *argv[])
 
     processRequest();
     sendData();  
+
+    //close connection
+    rspd_seg.type = CLOSE;
+    sendto(sockfd, &rspd_seg, rspd_seg.length + sizeof(int) *2 + sizeof(mode), 0,
+    (struct sockaddr*)&cli_addr, cli_addr_length);
     
     close(sockfd);
     fclose(file);
@@ -89,16 +94,6 @@ void sendData(){
       }
       time(&timer);
     }
-
-    /*
-   //TO BE DELETED
-    if(recvfrom(sockfd, &req_seg, sizeof(req_seg), MSG_DONTWAIT, 
-    (struct sockaddr*) &cli_addr, &cli_addr_length) < 0){
-      fprintf(stderr,"ERROR, couldn't recieve ack.\n%s \n", strerror(errno));
-      printf("%d\n", errno );
-      exit(1);
-    }
-    */
   
     //recieved expected ACK number
     if(recvfrom(sockfd, &req_seg, sizeof(req_seg), MSG_DONTWAIT, 
