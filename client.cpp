@@ -16,7 +16,6 @@ double probability() {
 }
 
 int main(int argc, char **argv) {
-    char buf[BUF_SIZE];
 
     if (argc != 4) {
        fprintf(stderr,"Usage Error. \n");
@@ -85,6 +84,11 @@ void segmentControl(){
 void segmentCorrupted(){
     if (probability() < CORRUPT_PROB) {
         printf("segment corrupted!\n");
+
+        //make and send corrupted segment
+        corr_seg.type = CORRUPT;
+        sendto(sockfd, &corr_seg, sizeof(int) *2 + sizeof(mode), 0,
+        (struct sockaddr*) &serveraddr, serverlen);
     }
     else
         segmentConfirm();
@@ -97,7 +101,7 @@ void segmentConfirm(){
 
     printf("Received segment number %d\n", rspd_seg.seq_num);
 
-    if(rspd_seg.seq_num == expected_seq_no){
+    if(rspd_seg.seq_num == expected_seq_no ){
         fwrite(rspd_seg.data, 1, rspd_seg.length, file);
         req_seg.seq_num = rspd_seg.seq_num;
         if (sendto(sockfd, &req_seg, req_seg.length + sizeof(int) *2 + sizeof(mode), 0,
@@ -107,5 +111,7 @@ void segmentConfirm(){
         }
         printf("ACK'd segment %d\n", req_seg.seq_num);
         expected_seq_no++;
-    }   
+    }
+    //a hack, but resets corruption state
+    corr_seg.type = ACK;   
 }

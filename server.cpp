@@ -109,6 +109,8 @@ void sendData(){
           time(&timer);
         }
       }
+      else if(req_seg.type == CORRUPT)
+        printf("Recieved corrupted segment. \n" );
     }
 
   }

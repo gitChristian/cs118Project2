@@ -14,7 +14,7 @@ seq_num = sequence number
 
 #define MAX_SEGMENT_SIZE 1000
 
-enum mode{ACK, REQ, DATA, CLOSE};
+enum mode{ACK, REQ, DATA, CLOSE, CORRUPT};
 const int SEG_DATA_SIZE = MAX_SEGMENT_SIZE - sizeof(int)*2 - sizeof(mode);
 
 struct segment
