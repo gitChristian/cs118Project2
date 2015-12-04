@@ -90,6 +90,16 @@ void sendData(){
       time(&timer);
     }
 
+    /*
+   //TO BE DELETED
+    if(recvfrom(sockfd, &req_seg, sizeof(req_seg), MSG_DONTWAIT, 
+    (struct sockaddr*) &cli_addr, &cli_addr_length) < 0){
+      fprintf(stderr,"ERROR, couldn't recieve ack.\n%s \n", strerror(errno));
+      printf("%d\n", errno );
+      exit(1);
+    }
+    */
+  
     //recieved expected ACK number
     if(recvfrom(sockfd, &req_seg, sizeof(req_seg), MSG_DONTWAIT, 
     (struct sockaddr*) &cli_addr, &cli_addr_length) > 0){

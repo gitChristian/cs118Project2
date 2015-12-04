@@ -87,7 +87,8 @@ void segmentControl(){
 void segmentCorrupted(){
     if (probability() < CORRUPT_PROB) {
         printf("segment corrupted!\n");
-        if (sendto(sockfd, &req_seg, req_seg.length, 0, (struct sockaddr*) &serveraddr, serverlen) < 0){
+        if (sendto(sockfd, &req_seg, req_seg.length + sizeof(int) *2 + sizeof(mode), 0,
+        (struct sockaddr*) &serveraddr, serverlen) < 0){
             fprintf(stderr,"Error corrupted file. \n");
             exit(1);
         }
@@ -100,7 +101,8 @@ void segmentConfirm(){
     printf("Received segment number %d\n", rspd_seg.seq_num);
     fwrite(rspd_seg.data, 1, rspd_seg.length, file);
     req_seg.seq_num = rspd_seg.seq_num;
-    if (sendto(sockfd, &req_seg, req_seg.length, 0, (struct sockaddr*) &serveraddr, serverlen) < 0){
+    if (sendto(sockfd, &req_seg, req_seg.length + sizeof(int) *2 + sizeof(mode), 0,
+    (struct sockaddr*) &serveraddr, serverlen) < 0){
         fprintf(stderr,"Error in Acking");
         exit(1);
     }
